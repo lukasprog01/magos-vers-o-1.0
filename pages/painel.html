@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meu Painel — MAGOS</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <style>
+    .main-wrap { padding-top: 80px; min-height: 100vh; }
+    /* PROFILE HEADER */
+    .profile-header {
+      background: linear-gradient(135deg, rgba(76,29,149,0.4), rgba(25,14,60,0.8));
+      border-bottom: 1px solid var(--border-glass);
+      padding: 40px 0;
+    }
+    .profile-inner { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
+    .profile-avatar-big {
+      width: 88px; height: 88px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--purple-dark), var(--gold));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3rem;
+      border: 3px solid var(--border-gold);
+      box-shadow: var(--shadow-gold);
+    }
+    .profile-meta { flex: 1; }
+    .profile-name { font-size: 1.8rem; color: var(--text-primary); margin-bottom: 4px; }
+    .profile-sub { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 12px; }
+    .profile-xp { margin-top: 10px; }
+    .xp-label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
+    .profile-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+    /* DASHBOARD GRID */
+    .dashboard-grid { display: grid; grid-template-columns: 280px 1fr; gap: 28px; padding: 40px 0 60px; }
+    .sidebar { display: flex; flex-direction: column; gap: 20px; }
+    .main-panel { display: flex; flex-direction: column; gap: 24px; }
+
+    /* SIDEBAR MENU */
+    .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+    .sidebar-menu li a {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.92rem;
+      font-weight: 500;
+      transition: var(--transition-fast);
+      cursor: pointer;
+    }
+    .sidebar-menu li a:hover { color: var(--text-primary); background: var(--bg-glass); }
+    .sidebar-menu li.active a { color: var(--gold); background: var(--gold-dim); }
+    .sidebar-menu .menu-icon { font-size: 1.2rem; width: 24px; text-align: center; }
+
+    /* BADGES GRID */
+    .badges-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+    .badge-item {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 14px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-md);
+      width: 80px;
+      text-align: center;
+      cursor: default;
+      transition: var(--transition-fast);
+    }
+    .badge-item:hover { border-color: var(--purple-bright); transform: translateY(-2px); }
+    .badge-item.locked { opacity: 0.3; filter: grayscale(1); }
+    .badge-item .badge-icon { font-size: 2rem; margin-bottom: 4px; }
+    .badge-item .badge-name { font-size: 0.65rem; color: var(--text-muted); line-height: 1.2; }
+
+    /* RIDDLE LIST */
+    .riddle-list-item {
+      display: flex; align-items: flex-start; gap: 16px;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: var(--bg-glass);
+      border: 1px solid transparent;
+      transition: var(--transition-fast);
+      margin-bottom: 10px;
+    }
+    .riddle-list-item:hover { border-color: var(--border-glass); background: rgba(40,20,90,0.5); }
+    .riddle-number {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--purple-dark), var(--purple-mid));
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .riddle-list-info { flex: 1; }
+    .riddle-list-q { font-size: 0.9rem; color: var(--text-primary); margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .riddle-list-meta { display: flex; gap: 10px; flex-wrap: wrap; }
+    .riddle-list-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+    /* PANEL TABS CONTENT */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    @media (max-width: 900px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .sidebar { order: 2; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="../" class="nav-logo"><span>🧙‍♂️</span> MAGOS</a>
+      <div class="nav-links">
+        <a href="painel.html" class="nav-link active">Painel</a>
+        <a href="explorar.html" class="nav-link">Explorar</a>
+        <a href="ranking.html" class="nav-link">Ranking</a>
+      </div>
+      <div class="nav-user-info">
+        <div id="nav-xp-display" class="level-badge">⭐ Nv.1</div>
+        <div class="user-avatar" id="nav-avatar" onclick="MagosApp.logout()" title="Sair">🧙‍♂️</div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-wrap">
+    <!-- PROFILE HEADER -->
+    <div class="profile-header">
+      <div class="container">
+        <div class="profile-inner">
+          <div class="profile-avatar-big" id="p-avatar">🧙‍♂️</div>
+          <div class="profile-meta">
+            <h1 class="profile-name" id="p-name">Carregando…</h1>
+            <div class="profile-sub" id="p-sub">—</div>
+            <div class="flex gap-12 flex-wrap">
+              <div class="level-badge" id="p-level">⭐ Nv.1 — Aprendiz</div>
+              <div class="badge badge-cyan" id="p-streak">🔥 0 dias seguidos</div>
+            </div>
+            <div class="profile-xp mt-8" style="max-width:320px;">
+              <div class="xp-label">
+                <span id="p-xp-cur">0 XP</span>
+                <span id="p-xp-next">200 XP próximo nível</span>
+              </div>
+              <div class="xp-bar-wrap"><div class="xp-bar-fill" id="p-xp-bar" style="width:0%"></div></div>
+            </div>
+          </div>
+          <div class="profile-actions">
+            <a href="criar.html" class="btn btn-gold">➕ Nova Charada</a>
+            <button class="btn btn-ghost" onclick="MagosApp.logout()">🚪 Sair</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD GRID -->
+    <div class="container">
+      <div class="dashboard-grid">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+          <!-- Stats card -->
+          <div class="card" style="padding:20px;">
+            <h3 style="font-size:0.9rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px;">📊 Estatísticas</h3>
+            <div class="grid-2" style="gap:12px;">
+              <div class="stat-card" style="padding:16px 10px;">
+                <span class="stat-icon" style="font-size:1.8rem;">📜</span>
+                <div class="stat-value" style="font-size:1.5rem;" id="stat-created">0</div>
+                <div class="stat-label" style="font-size:0.7rem;">Criadas</div>
+              </div>
+              <div class="stat-card" style="padding:16px 10px;">
+                <span class="stat-icon" style="font-size:1.8rem;">🎯</span>
+                <div class="stat-value" style="font-size:1.5rem;" id="stat-solved">0</div>
+                <div class="stat-label" style="font-size:0.7rem;">Resolvidas</div>
+              </div>
+            </div>
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-glass);">
+              <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:6px;">
+                <span style="color:var(--text-muted);">Total XP</span>
+                <span style="color:var(--gold);font-family:var(--font-mono);font-weight:700;" id="stat-xp">0</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:0.85rem;">
+                <span style="color:var(--text-muted);">Conquistas</span>
+                <span style="color:var(--purple-light);font-family:var(--font-mono);font-weight:700;" id="stat-badges">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Menu -->
+          <div class="card" style="padding:16px;">
+            <ul class="sidebar-menu">
+              <li class="active" id="menu-minhas"><a onclick="showTab('minhas')"><span class="menu-icon">📜</span> Minhas Charadas</a></li>
+              <li id="menu-conquistas"><a onclick="showTab('conquistas')"><span class="menu-icon">🏅</span> Conquistas</a></li>
+              <li id="menu-atividade"><a onclick="showTab('atividade')"><span class="menu-icon">⚡</span> Atividade Recente</a></li>
+              <li id="menu-mensal"><a onclick="showTab('mensal')"><span class="menu-icon">🏆</span> Charada Mensal</a></li>
+            </ul>
+          </div>
+
+          <!-- Quick links -->
+          <div class="card" style="padding:16px;">
+            <h3 style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;">🔗 Ações Rápidas</h3>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <a href="criar.html" class="btn btn-purple btn-sm">➕ Criar Charada</a>
+              <a href="explorar.html" class="btn btn-ghost btn-sm">🔍 Explorar</a>
+              <a href="ranking.html" class="btn btn-ghost btn-sm">🏆 Ver Ranking</a>
+            </div>
+          </div>
+        </aside>
+
+        <!-- MAIN PANEL -->
+        <div class="main-panel">
+          <!-- TAB: Minhas Charadas -->
+          <div class="tab-content active" id="tab-minhas">
+            <div class="flex-between mb-16">
+              <h2 style="font-size:1.3rem;">📜 Minhas Charadas</h2>
+              <a href="criar.html" class="btn btn-gold btn-sm">➕ Nova</a>
+            </div>
+            <div id="my-riddles-list">
+              <div class="flex-center" style="padding:60px;color:var(--text-muted);">
+                <div class="spinner"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: Conquistas -->
+          <div class="tab-content" id="tab-conquistas">
+            <h2 style="font-size:1.3rem;margin-bottom:20px;">🏅 Suas Conquistas</h2>
+            <div class="badges-grid" id="badges-grid"></div>
+            <div class="card mt-24" style="padding:20px;">
+              <h3 style="font-size:1rem;margin-bottom:12px;color:var(--gold);">⚡ Como ganhar mais conquistas</h3>
+              <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;font-size:0.88rem;color:var(--text-secondary);">
+                <li>👣 Responda sua primeira charada</li>
+                <li>🪄 Responda 10 charadas</li>
+                <li>📜 Crie 10 charadas</li>
+                <li>🔥 Jogue 7 dias seguidos</li>
+                <li>⚡ Chegue ao nível 5</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- TAB: Atividade -->
+          <div class="tab-content" id="tab-atividade">
+            <h2 style="font-size:1.3rem;margin-bottom:20px;">⚡ Atividade Recente</h2>
+            <div id="activity-list"></div>
+          </div>
+
+          <!-- TAB: Mensal -->
+          <div class="tab-content" id="tab-mensal">
+            <div class="prize-box">
+              <div class="badge badge-gold mb-16">🏆 Charada do Mês</div>
+              <h2 style="font-size:1.6rem;margin-bottom:8px;">Prêmio Acumulado</h2>
+              <div class="prize-amount" id="p-prize">R$ 500,00</div>
+              <p style="color:var(--text-secondary);margin-bottom:20px;">Resolva a charada mensal para concorrer ao prêmio em dinheiro.</p>
+              <div style="margin-bottom:24px;">
+                <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:4px;">⏳ ENCERRA EM</div>
+                <div class="countdown-display" id="countdown-panel">--</div>
+              </div>
+              <div id="monthly-riddle-area"></div>
+              <!-- Admin Controls for Monthly -->
+              <div id="admin-monthly-settings" style="display:none;margin-top:30px;padding-top:20px;border-top:1px dashed var(--border-glass);">
+                <h4 style="font-size:0.8rem;color:var(--gold);text-transform:uppercase;margin-bottom:12px;">🛡️ Configurações de Admin</h4>
+                <div class="flex gap-12 align-end">
+                  <div class="form-group mb-0" style="flex:1;">
+                    <label class="form-label" style="font-size:0.75rem;">Nível Mínimo Exigido</label>
+                    <input type="number" class="form-control" id="input-min-level" min="1" max="50">
+                  </div>
+                  <button class="btn btn-purple btn-sm" onclick="saveAdminSettings()">Salvar Configuração</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR MODAL -->
+  <div class="modal-overlay" id="qr-modal">
+    <div class="modal" style="max-width:400px;text-align:center;">
+      <button class="modal-close" onclick="closeModal('qr-modal')">✕</button>
+      <h3 style="font-family:var(--font-display);color:var(--gold);margin-bottom:8px;">QR Code da Charada</h3>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:20px;">Imprima ou compartilhe para que todos possam resolver.</p>
+      <div class="qr-frame" id="qr-display" style="margin:0 auto 20px;display:inline-block;">
+        <div style="width:200px;height:200px;display:flex;align-items:center;justify-content:center;color:#333;">Gerando…</div>
+      </div>
+      <div id="qr-url" style="font-size:0.75rem;color:var(--text-muted);word-break:break-all;margin-bottom:16px;"></div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn btn-green btn-sm" id="qr-download-btn" onclick="downloadQR()">⬇️ Baixar PNG</button>
+        <button class="btn btn-ghost btn-sm" id="qr-print-btn" onclick="printRiddle()">🖨️ Imprimir</button>
+        <button class="btn btn-ghost btn-sm" id="qr-whatsapp-btn" onclick="shareQRWhatsApp()">💬 WhatsApp</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/qrcode.min.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    let currentQRRiddle = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!MagosApp.requireLogin()) return;
+      renderProfile();
+      await renderMyRiddles();
+      renderBadges();
+      await renderActivity();
+      await renderMonthly();
+
+      // Show Admin controls if applicable
+      if (MagosApp.currentUser.role === 'admin') {
+        const adminArea = document.getElementById('admin-monthly-settings');
+        if (adminArea) {
+          adminArea.style.display = 'block';
+        }
+      }
+    });
+
+    async function saveAdminSettings() {
+      const lv = document.getElementById('input-min-level').value;
+      // Salva na tabela settings via API
+      await MagosApp.apiCall('saveSettings', { key: 'monthlyMinLevel', value: parseInt(lv) });
+      MagosApp.toast('✨ Configuração de nível atualizada!', 'success');
+      await renderMonthly();
+    }
+
+    function renderProfile() {
+      const u = MagosApp.currentUser;
+      document.getElementById('p-avatar').textContent = u.avatar;
+      document.getElementById('nav-avatar').textContent = u.avatar;
+      document.getElementById('p-name').textContent = u.name;
+      document.getElementById('p-sub').textContent = u.type === 'empresa' ? `🏢 ${u.company}` : `✉️ ${u.email}`;
+      document.getElementById('p-level').textContent = `${MagosApp.getLevelEmoji(u.level)} Nv.${u.level} — ${MagosApp.getLevelTitle(u.level)}`;
+      document.getElementById('p-streak').textContent = `🔥 ${u.streak} dia${u.streak !== 1 ? 's' : ''} seguido${u.streak !== 1 ? 's' : ''}`;
+      document.getElementById('p-xp-cur').textContent = `${u.xp} XP`;
+      document.getElementById('p-xp-next').textContent = `${u.xpNext} XP próximo nível`;
+      document.getElementById('p-xp-bar').style.width = `${Math.round(u.xp / u.xpNext * 100)}%`;
+      document.getElementById('nav-xp-display').textContent = `${MagosApp.getLevelEmoji(u.level)} Nv.${u.level}`;
+      document.getElementById('stat-created').textContent = u.charadasCreated;
+      document.getElementById('stat-solved').textContent = u.charadasSolved;
+      document.getElementById('stat-xp').textContent = u.xp;
+      document.getElementById('stat-badges').textContent = u.badges.length;
+    }
+
+    async function renderMyRiddles() {
+      const list = document.getElementById('my-riddles-list');
+      const riddles = await MagosApp.getMyRiddles();
+      if (!riddles.length) {
+        list.innerHTML = `<div class="card" style="text-align:center;padding:48px;">
+          <div style="font-size:3rem;margin-bottom:12px;">📜</div>
+          <h3 style="color:var(--text-secondary);font-size:1rem;margin-bottom:12px;">Você ainda não criou nenhuma charada</h3>
+          <a href="criar.html" class="btn btn-gold">➕ Criar Minha Primeira Charada</a>
+        </div>`;
+        return;
+      }
+      list.innerHTML = riddles.map((r, i) => `
+        <div class="riddle-list-item">
+          <div class="riddle-number" style="background:linear-gradient(135deg,${MagosApp.difficultyColor(r.difficulty)}66,${MagosApp.difficultyColor(r.difficulty)})">
+            ${i + 1}
+          </div>
+          <div class="riddle-list-info">
+            <div class="riddle-list-q">${r.question}</div>
+            <div class="riddle-list-meta">
+              <span class="badge badge-purple" style="font-size:0.72rem;">${MagosApp.difficultyLabel(r.difficulty)}</span>
+              <span class="badge badge-gold" style="font-size:0.72rem;">+${r.points} pts</span>
+              <span class="badge badge-cyan" style="font-size:0.72rem;">👁 ${r.views} views</span>
+              <span class="badge badge-green" style="font-size:0.72rem;">✅ ${r.solvedCount} resolvidas</span>
+              ${r.isMonthly ? '<span class="badge badge-gold" style="font-size:0.72rem;">🏆 Mensal</span>' : ''}
+            </div>
+          </div>
+          <div class="riddle-list-actions">
+            <button class="btn btn-ghost btn-sm" onclick="openQR('${r.id}')" title="QR Code">📱</button>
+            <button class="btn btn-ghost btn-sm" onclick="MagosApp.shareOnWhatsApp('${r.id}')" title="WhatsApp">💬</button>
+            <a href="charada.html?id=${r.id}" class="btn btn-ghost btn-sm" title="Visualizar">👁</a>
+          </div>
+        </div>`).join('');
+    }
+
+    function renderBadges() {
+      const u = MagosApp.currentUser;
+      const grid = document.getElementById('badges-grid');
+      grid.innerHTML = Object.entries(MagosApp.BADGE_DEFS).map(([id, b]) => {
+        const owned = u.badges.includes(id);
+        return `<div class="badge-item ${owned ? '' : 'locked'}" title="${b.desc}">
+          <span class="badge-icon">${b.icon}</span>
+          <span class="badge-name">${b.name}</span>
+        </div>`;
+      }).join('');
+    }
+
+    async function renderActivity() {
+      const u = MagosApp.currentUser;
+      const list = document.getElementById('activity-list');
+      list.innerHTML = '<div class="flex-center" style="padding:40px;"><div class="spinner"></div></div>';
+      const res = await MagosApp.apiCall(`getMyActivity&userId=${u.id}`);
+      const answers = (res.success ? res.data : []).slice(0, 10);
+      if (!answers.length) {
+        list.innerHTML = `<div class="card" style="text-align:center;padding:40px;color:var(--text-muted);">Nenhuma atividade ainda.</div>`;
+        return;
+      }
+      list.innerHTML = answers.map(a => {
+        return `<div class="riddle-list-item">
+          <div style="font-size:1.5rem;">${a.correct ? '✅' : '❌'}</div>
+          <div class="riddle-list-info">
+            <div class="riddle-list-q">${a.question || 'Charada não encontrada'}</div>
+            <div class="riddle-list-meta">
+              <span class="badge ${a.correct ? 'badge-green' : 'badge-red'}" style="font-size:0.72rem;">${a.correct ? 'Correta' : 'Incorreta'}</span>
+              <span style="font-size:0.8rem;color:var(--text-muted);">${MagosApp.formatDate(a.answeredAt)}</span>
+            </div>
+          </div>
+          ${a.riddleId ? `<a href="charada.html?id=${a.riddleId}" class="btn btn-ghost btn-sm">Ver</a>` : ''}
+        </div>`;
+      }).join('');
+    }
+
+    async function renderMonthly() {
+      const prizeEl = document.getElementById('p-prize');
+      const cdEl = document.getElementById('countdown-panel');
+      const area = document.getElementById('monthly-riddle-area');
+
+      // Busca configurações do servidor
+      const settingsRes = await MagosApp.apiCall('getSettings');
+      const settings = settingsRes.success ? settingsRes.data : {};
+      const prizePool = parseFloat(settings.monthlyPrizePool || 500);
+      const deadline = settings.monthlyDeadline;
+      const minLevel = parseInt(settings.monthlyMinLevel || 1);
+
+      if (prizeEl) prizeEl.textContent = `R$ ${prizePool.toFixed(2).replace('.', ',')}`;
+      if (cdEl && deadline) MagosApp.countdown(deadline, cdEl);
+      document.getElementById('input-min-level') && (document.getElementById('input-min-level').value = minLevel);
+
+      // Busca charada mensal ativa
+      const riddlesRes = await MagosApp.apiCall('getMonthlyRiddle');
+      const m = riddlesRes.success ? riddlesRes.data : null;
+
+      if (m) {
+        const answered = await MagosApp.hasAnswered(m.id);
+        const userLevel = MagosApp.currentUser.level || 1;
+        const canAnswer = userLevel >= minLevel;
+
+        let content = `
+          <div class="card" style="margin-top:20px;text-align:left;">
+            <div class="badge badge-gold mb-16">🧩 Charada Principal</div>
+            <div class="riddle-question">${m.question}</div>`;
+
+        if (answered) {
+          content += `<div class="alert alert-success mt-24">✅ Você já respondeu esta charada e está concorrendo ao prêmio!</div>`;
+        } else if (!canAnswer) {
+          content += `
+            <div class="alert alert-warning mt-24" style="text-align:center;">
+              <div style="font-size:2rem;margin-bottom:10px;">🔒</div>
+              <p>Esta charada é exclusiva para magos de <strong>nível ${minLevel}</strong> ou superior.</p>
+              <p style="font-size:0.8rem;margin-top:8px;opacity:0.8;">Continue resolvendo outros enigmas para subir de nível! (Seu nível atual: ${userLevel})</p>
+            </div>`;
+        } else {
+          content += `
+            <form id="monthly-form" style="margin-top:28px;">
+              <div class="form-group">
+                <label class="form-label">Sua Resposta</label>
+                <input type="text" class="form-control" id="monthly-answer" placeholder="Digite sua resposta…">
+              </div>
+              <button type="submit" class="btn btn-gold">🪄 Responder</button>
+            </form>`;
+        }
+        
+        content += `</div>`;
+        area.innerHTML = content;
+        
+        if (!answered && canAnswer) {
+          document.getElementById('monthly-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const ans = document.getElementById('monthly-answer').value;
+            const result = await MagosApp.answerRiddle(m.id, ans);
+            if (result.correct) {
+              MagosApp.toast('🎉 Resposta correta! Você está concorrendo ao prêmio!', 'magic');
+              await renderMonthly();
+              renderProfile();
+            } else {
+              MagosApp.toast('❌ Resposta incorreta. Tente novamente!', 'error');
+            }
+          });
+        }
+      } else {
+        area.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted);">Nenhuma charada mensal ativa no momento.</div>`;
+      }
+    }
+
+    // TABS
+    function showTab(name) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.sidebar-menu li').forEach(li => li.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      document.getElementById('menu-' + name).classList.add('active');
+    }
+
+    // QR MODAL
+    async function openQR(riddleId) {
+      currentQRRiddle = riddleId;
+      const modal = document.getElementById('qr-modal');
+      modal.classList.add('open');
+      const url = MagosApp.getRiddleURL(riddleId);
+      document.getElementById('qr-url').textContent = url;
+      document.getElementById('qr-display').innerHTML = '<div style="width:200px;height:200px;display:flex;align-items:center;justify-content:center;"><div class="spinner"></div></div>';
+      try {
+        const qrObj = window.QRCode || window.qrcode;
+        if (!qrObj) {
+          document.getElementById('qr-display').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}" style="border-radius:8px;">`;
+          return;
+        }
+        const canvas = document.createElement('canvas');
+        await qrObj.toCanvas(canvas, url, { width: 200, margin: 2, color: { dark: '#1a0533', light: '#ffffff' } });
+        canvas.id = 'qr-canvas';
+        document.getElementById('qr-display').innerHTML = '';
+        document.getElementById('qr-display').appendChild(canvas);
+      } catch(e) {
+        document.getElementById('qr-display').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}" style="border-radius:8px;">`;
+      }
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    function downloadQR() {
+      const canvas = document.getElementById('qr-canvas');
+      if (!canvas) { MagosApp.toast('QR não disponível para download.', 'error'); return; }
+      const a = document.createElement('a');
+      a.download = `magos-charada-${currentQRRiddle}.png`;
+      a.href = canvas.toDataURL();
+      a.click();
+      MagosApp.toast('✅ QR Code baixado!', 'success');
+    }
+
+    function printRiddle() {
+      if (currentQRRiddle) window.open(`imprimir.html?id=${currentQRRiddle}`, '_blank');
+    }
+
+    function shareQRWhatsApp() {
+      if (currentQRRiddle) MagosApp.shareOnWhatsApp(currentQRRiddle);
+    }
+
+    window.addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('open');
+    });
+  </script>
+</body>
+</html>

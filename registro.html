@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Criar Conta — MAGOS</title>
+  <meta name="description" content="Crie sua conta na plataforma MAGOS de charadas mágicas.">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 60px 16px; }
+    .auth-card { width:100%; max-width: 520px; padding: 48px 40px; }
+    .auth-logo { text-align:center; margin-bottom:32px; }
+    .auth-logo-icon { font-size:3.5rem; display:block; filter:drop-shadow(0 0 16px rgba(255,215,0,0.5)); animation:float 4s ease-in-out infinite; }
+    .auth-logo h1 { font-size:1.8rem; color:var(--gold); }
+    .auth-logo p { color:var(--text-muted); font-size:0.9rem; }
+
+    .type-selector { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px; }
+    .type-btn {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--border-glass);
+      background: var(--bg-glass);
+      cursor: pointer;
+      text-align: center;
+      transition: var(--transition-fast);
+      color: var(--text-secondary);
+    }
+    .type-btn:hover { border-color: var(--purple-bright); }
+    .type-btn.selected { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+    .type-btn .type-icon { font-size:2rem; display:block; margin-bottom:6px; }
+    .type-btn .type-name { font-size: 0.9rem; font-weight:600; }
+  </style>
+</head>
+<body>
+  <canvas id="particles-canvas"></canvas>
+  <div class="magic-orb" style="background:var(--purple-bright);top:-10%;right:-10%;width:400px;height:400px;position:fixed;"></div>
+
+  <div class="auth-wrap">
+    <div class="card auth-card">
+      <div class="auth-logo">
+        <span class="auth-logo-icon">✨</span>
+        <h1>Criar Conta</h1>
+        <p>Inicie sua jornada mágica</p>
+      </div>
+
+      <div id="alert-area"></div>
+
+      <!-- Account type -->
+      <div class="form-group">
+        <label class="form-label">Tipo de conta</label>
+        <div class="type-selector">
+          <div class="type-btn selected" id="type-fisica" onclick="selectType('fisica')">
+            <span class="type-icon">🧙‍♂️</span>
+            <div class="type-name">Pessoa Física</div>
+          </div>
+          <div class="type-btn" id="type-empresa" onclick="selectType('empresa')">
+            <span class="type-icon">🏢</span>
+            <div class="type-name">Empresa</div>
+          </div>
+        </div>
+        <input type="hidden" id="account-type" value="fisica">
+      </div>
+
+      <form id="register-form" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="name">Nome completo</label>
+          <div class="input-wrapper">
+            <span class="input-icon">👤</span>
+            <input type="text" class="form-control" id="name" placeholder="Seu nome" autocomplete="name" required>
+          </div>
+        </div>
+
+        <div class="form-group" id="company-field" style="display:none;">
+          <label class="form-label" for="company">Nome da Empresa</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🏢</span>
+            <input type="text" class="form-control" id="company" placeholder="Razão social ou nome fantasia">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">Email</label>
+          <div class="input-wrapper">
+            <span class="input-icon">📧</span>
+            <input type="email" class="form-control" id="email" placeholder="seu@email.com" autocomplete="email" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Senha</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🔑</span>
+            <input type="password" class="form-control" id="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password2">Confirmar Senha</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🔐</span>
+            <input type="password" class="form-control" id="password2" placeholder="Repita a senha" required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-gold btn-block btn-lg" id="reg-btn" style="margin-top:8px;">
+          <span id="btn-text">🪄 Criar Minha Conta</span>
+          <span id="btn-loader" style="display:none;">⏳</span>
+        </button>
+      </form>
+
+      <p style="text-align:center;margin-top:24px;font-size:0.9rem;color:var(--text-muted);">
+        Já tem conta?
+        <a href="login.html" style="color:var(--gold);text-decoration:none;font-weight:600;">Entrar</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (MagosApp.isLoggedIn()) window.location.href = 'painel.html';
+
+      const alertArea = document.getElementById('alert-area');
+      function showAlert(msg, type='error') {
+        const icons = { error:'❌', success:'✅' };
+        alertArea.innerHTML = `<div class="alert alert-${type}">${icons[type]} ${msg}</div>`;
+      }
+
+      window.selectType = (type) => {
+        document.getElementById('account-type').value = type;
+        document.getElementById('type-fisica').classList.toggle('selected', type === 'fisica');
+        document.getElementById('type-empresa').classList.toggle('selected', type === 'empresa');
+        document.getElementById('company-field').style.display = type === 'empresa' ? 'block' : 'none';
+      };
+
+      document.getElementById('register-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        alertArea.innerHTML = '';
+        const name = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const password2 = document.getElementById('password2').value;
+        const type = document.getElementById('account-type').value;
+        const company = document.getElementById('company').value.trim();
+
+        if (!name || !email || !password) { showAlert('Preencha todos os campos obrigatórios.'); return; }
+        if (password.length < 6) { showAlert('A senha deve ter ao menos 6 caracteres.'); return; }
+        if (password !== password2) { showAlert('As senhas não coincidem.'); return; }
+        if (type === 'empresa' && !company) { showAlert('Informe o nome da empresa.'); return; }
+
+        const btn = document.getElementById('reg-btn');
+        btn.disabled = true;
+        document.getElementById('btn-text').style.display = 'none';
+        document.getElementById('btn-loader').style.display = 'inline';
+
+        await new Promise(r => setTimeout(r, 700));
+
+        const result = await MagosApp.register({ name, email, password, type, company });
+        btn.disabled = false;
+        document.getElementById('btn-text').style.display = 'inline';
+        document.getElementById('btn-loader').style.display = 'none';
+
+        if (result.success) {
+          showAlert('Conta criada! Bem-vindo(a) ao MAGOS! ✨', 'success');
+          setTimeout(() => window.location.href = 'painel.html', 1000);
+        } else {
+          showAlert(result.error);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

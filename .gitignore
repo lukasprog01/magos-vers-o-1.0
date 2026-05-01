@@ -1,0 +1,33 @@
+# ========================
+# Credenciais e configurações locais
+# ========================
+# Renomeie conexao.php.example → conexao.php e preencha seus dados reais
+# Nunca suba arquivos com senhas ou credenciais de hospedagem
+
+# Arquivos de notas locais
+CONEXÃO.txt
+"banco de dados.txt"
+banco\ de\ dados.txt
+
+# Dependências Node
+node_modules/
+package-lock.json
+
+# Banco de dados SQLite local
+*.db
+*.sqlite
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.production
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/settings.json
+*.suo
+*.user

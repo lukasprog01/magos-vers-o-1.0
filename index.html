@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MAGOS — Plataforma de Charadas Mágicas</title>
+  <meta name="description" content="Decifre enigmas, suba de nível e conquiste prêmios na plataforma de charadas mais mágica do Brasil.">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    /* LANDING-SPECIFIC */
+    .hero { position: relative; min-height: 100vh; display: flex; align-items: center; overflow: hidden; }
+    .hero-bg {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 100% 80% at 50% 0%, rgba(124,58,237,0.25) 0%, transparent 60%),
+                  radial-gradient(ellipse 60% 60% at 85% 50%, rgba(255,215,0,0.08) 0%, transparent 60%);
+    }
+    .hero-content { position: relative; z-index: 2; max-width: 700px; }
+    .hero-logo-wrap { display: flex; align-items: center; gap: 18px; margin-bottom: 28px; }
+    .hero-logo-icon {
+      font-size: 4.5rem;
+      filter: drop-shadow(0 0 20px rgba(255,215,0,0.6));
+      animation: float 4s ease-in-out infinite;
+    }
+    .hero-tagline {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3em;
+      color: var(--gold);
+      font-family: var(--font-mono);
+      margin-bottom: 12px;
+    }
+    .hero-title {
+      font-size: clamp(3rem, 7vw, 6rem);
+      font-weight: 900;
+      line-height: 1.05;
+      margin-bottom: 24px;
+    }
+    .hero-subtitle {
+      font-size: 1.15rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-bottom: 40px;
+      max-width: 540px;
+    }
+    .hero-cta { display: flex; gap: 16px; flex-wrap: wrap; }
+
+    /* FLOATING CARDS */
+    .hero-visual { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 42%; z-index: 1; pointer-events: none; }
+    .floating-card {
+      position: absolute;
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      backdrop-filter: blur(20px);
+      box-shadow: var(--shadow-card);
+      animation: float linear infinite;
+    }
+    .fc-1 { top: 0; right: 10%; animation-duration: 5s; animation-delay: 0s; }
+    .fc-2 { top: 35%; right: 2%; animation-duration: 6s; animation-delay: -2s; }
+    .fc-3 { bottom: 5%; right: 15%; animation-duration: 4.5s; animation-delay: -1s; }
+
+    /* FEATURES SECTION */
+    .feature-icon { font-size: 2.5rem; margin-bottom: 16px; display: block; }
+    .feature-card { text-align: center; padding: 36px 24px; }
+    .feature-card h3 { font-size: 1.1rem; margin-bottom: 10px; color: var(--gold); }
+    .feature-card p { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.65; }
+
+    /* HOW IT WORKS */
+    .steps { display: flex; gap: 0; position: relative; }
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 28px; left: 40px; right: 40px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--purple-mid), var(--gold), var(--purple-mid));
+      opacity: 0.3;
+    }
+    .step { flex: 1; text-align: center; padding: 0 20px; position: relative; z-index: 1; }
+    .step-num {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--purple-dark), var(--purple-bright));
+      border: 2px solid var(--border-glass);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 0 auto 20px;
+      box-shadow: var(--purple-glow);
+    }
+    .step h3 { font-size: 1rem; color: var(--text-primary); margin-bottom: 8px; }
+    .step p { font-size: 0.85rem; color: var(--text-secondary); }
+
+    /* MONTHLY SECTION */
+    .countdown-display {
+      font-family: var(--font-mono);
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--cyan);
+      text-shadow: var(--cyan-glow);
+      letter-spacing: 0.08em;
+    }
+
+    /* TESTIMONIALS / SAMPLE RIDDLE */
+    .riddle-preview {
+      max-width: 600px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .hero-visual { display: none; }
+      .steps { flex-direction: column; gap: 32px; }
+      .steps::before { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span>🧙‍♂️</span> MAGOS
+      </a>
+      <div class="nav-links">
+        <a href="#features" class="nav-link">Como Funciona</a>
+        <a href="#charada-mensal" class="nav-link">Charada Mensal</a>
+        <a href="pages/login.html?next=explorar.html" class="nav-link">Explorar</a>
+      </div>
+      <div class="flex gap-8">
+        <a href="pages/login.html" class="btn btn-ghost btn-sm">Entrar</a>
+        <a href="pages/registro.html" class="btn btn-gold btn-sm">✨ Começar</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <!-- Orbs -->
+    <div class="magic-orb" style="background:var(--purple-bright);top:-5%;left:-10%;width:500px;height:500px;"></div>
+    <div class="magic-orb" style="background:var(--gold);bottom:10%;right:20%;width:250px;height:250px;animation-delay:-3s;opacity:0.08;"></div>
+
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-tagline">Decifre · Progrida · Conquiste</div>
+        <h1 class="hero-title">
+          O Enigma<br>
+          <span class="gradient-text">Está em Você</span>
+        </h1>
+        <p class="hero-subtitle">
+          Resolva charadas mágicas, suba de nível, ganhe recompensas e concorra ao prêmio da 
+          <strong style="color:var(--gold)">Charada Mensal</strong>. Para pessoas e empresas que amam enigmas.
+        </p>
+        <div class="hero-cta">
+          <a href="pages/registro.html" class="btn btn-gold btn-lg">
+            🪄 Criar Conta Grátis
+          </a>
+          <a href="pages/login.html?next=explorar.html" class="btn btn-ghost btn-lg">
+            🔍 Explorar Charadas
+          </a>
+        </div>
+        <!-- Stats bar -->
+        <div class="flex gap-24 mt-40" style="flex-wrap:wrap;">
+          <div>
+            <div style="font-family:var(--font-mono);font-size:1.6rem;font-weight:700;color:var(--gold)">1.2k+</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;">Charadas</div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-mono);font-size:1.6rem;font-weight:700;color:var(--purple-light)">8.4k+</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;">Jogadores</div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-mono);font-size:1.6rem;font-weight:700;color:var(--cyan)">R$500</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;">Prêmio Mês</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating sample cards -->
+    <div class="hero-visual" style="height:420px;position:absolute;right:2%;top:50%;transform:translateY(-50%);">
+      <div class="floating-card fc-1" style="width:220px;">
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:6px;">🧩 Charada do Dia</div>
+        <div style="font-size:0.9rem;font-style:italic;color:var(--text-primary);">"Tenho cidades, mas nelas não moram pessoas…"</div>
+        <div class="badge badge-gold mt-8">+150 pts</div>
+      </div>
+      <div class="floating-card fc-2" style="width:200px;">
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:6px;">🏆 Ranking</div>
+        <div class="lb-row" style="padding:8px 0;background:none;border:none;margin:0;">
+          <div style="font-size:1.2rem;">🥇</div>
+          <div class="lb-info"><div class="lb-name" style="font-size:0.85rem;">Ana F.</div></div>
+          <div class="lb-score" style="font-size:0.9rem;">8.4k</div>
+        </div>
+        <div class="lb-row" style="padding:8px 0;background:none;border:none;margin:0;">
+          <div style="font-size:1.2rem;">🥈</div>
+          <div class="lb-info"><div class="lb-name" style="font-size:0.85rem;">Rafael M.</div></div>
+          <div class="lb-score" style="font-size:0.9rem;">7.1k</div>
+        </div>
+      </div>
+      <div class="floating-card fc-3" style="width:180px;text-align:center;">
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:6px;">⚡ Nível Alcançado!</div>
+        <div style="font-size:2rem;">🌟</div>
+        <div style="font-family:var(--font-mono);font-size:0.9rem;color:var(--gold);font-weight:700;">Feiticeiro Nv.8</div>
+        <div class="xp-bar-wrap mt-8"><div class="xp-bar-fill" style="width:65%;"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section-title" data-animate>
+        <div class="badge badge-purple mb-16">⚡ Funcionalidades</div>
+        <h2>Tudo que você precisa<br><span class="gradient-text">para dominar os enigmas</span></h2>
+        <p>Uma plataforma completa para criar, compartilhar e resolver charadas com gamificação real.</p>
+      </div>
+      <div class="grid-3">
+        <div class="card feature-card" data-animate style="animation-delay:0.1s;">
+          <span class="feature-icon">🪄</span>
+          <h3>Crie Charadas</h3>
+          <p>Empresas e pessoas físicas podem criar charadas personalizadas com QR Codes automáticos para impressão.</p>
+        </div>
+        <div class="card feature-card" data-animate style="animation-delay:0.2s;">
+          <span class="feature-icon">📱</span>
+          <h3>QR Code Mágico</h3>
+          <p>Cada charada gera um QR Code único. Imprima em caixas de pizza, panfletos e onde quiser.</p>
+        </div>
+        <div class="card feature-card" data-animate style="animation-delay:0.3s;">
+          <span class="feature-icon">🏆</span>
+          <h3>Sistema de Níveis</h3>
+          <p>Ganhe XP, suba de nível e colete medalhas exclusivas a cada charada resolvida.</p>
+        </div>
+        <div class="card feature-card" data-animate style="animation-delay:0.4s;">
+          <span class="feature-icon">💰</span>
+          <h3>Prêmio Mensal</h3>
+          <p>A Charada Principal acumula prêmio em dinheiro todo mês. Resolva para concorrer!</p>
+        </div>
+        <div class="card feature-card" data-animate style="animation-delay:0.5s;">
+          <span class="feature-icon">💬</span>
+          <h3>Compartilhe no WhatsApp</h3>
+          <p>Desafie amigos com um clique. Compartilhe suas charadas diretamente pelo WhatsApp.</p>
+        </div>
+        <div class="card feature-card" data-animate style="animation-delay:0.6s;">
+          <span class="feature-icon">🖨️</span>
+          <h3>Impressão Fácil</h3>
+          <p>Gere páginas otimizadas para impressão em caixas de pizza, cardápios e materiais promocionais.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="section" style="background: linear-gradient(180deg, transparent, rgba(25,14,60,0.6), transparent);">
+    <div class="container">
+      <div class="section-title" data-animate>
+        <div class="badge badge-gold mb-16">📖 Passo a Passo</div>
+        <h2>Como funciona<br><span class="text-gold">a magia?</span></h2>
+      </div>
+      <div class="steps">
+        <div class="step" data-animate>
+          <div class="step-num">1</div>
+          <h3>Crie sua conta</h3>
+          <p>Pessoa física ou empresa — cadastre-se gratuitamente em segundos.</p>
+        </div>
+        <div class="step" data-animate style="animation-delay:0.15s;">
+          <div class="step-num">2</div>
+          <h3>Crie ou explore charadas</h3>
+          <p>Use o painel para criar enigmas ou resolva os de outros jogadores.</p>
+        </div>
+        <div class="step" data-animate style="animation-delay:0.3s;">
+          <div class="step-num">3</div>
+          <h3>Gere o QR Code</h3>
+          <p>Imprima, compartilhe e deixe as pessoas encontrarem seu enigma.</p>
+        </div>
+        <div class="step" data-animate style="animation-delay:0.45s;">
+          <div class="step-num">4</div>
+          <h3>Ganhe pontos</h3>
+          <p>XP, níveis, medalhas e prêmio em dinheiro. A magia é real!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHARADA MENSAL -->
+  <section class="section" id="charada-mensal">
+    <div class="container">
+      <div class="prize-box" data-animate>
+        <div class="badge badge-gold mb-16">🏆 Charada Principal do Mês</div>
+        <h2 style="font-size:2rem;margin-bottom:8px;">Concorra ao Prêmio Acumulado</h2>
+        <div class="prize-amount" id="prize-amount">R$ 500,00</div>
+        <p style="color:var(--text-secondary);margin-bottom:24px;">Resolva a charada mensal para concorrer. Quanto mais difícil, maior o prêmio!</p>
+        <div style="margin-bottom:28px;">
+          <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:6px;">⏳ ENCERRA EM</div>
+          <div class="countdown-display" id="countdown-home">--d --h --m --s</div>
+        </div>
+        <a href="pages/login.html" class="btn btn-gold btn-lg">🪄 Participar Agora</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA FINAL -->
+  <section class="section">
+    <div class="container" style="text-align:center;">
+      <div data-animate>
+        <h2 style="font-size:clamp(2rem,5vw,3.5rem);margin-bottom:20px;">
+          Pronto para decifrar<br><span class="gradient-text">o primeiro enigma?</span>
+        </h2>
+        <p style="color:var(--text-secondary);font-size:1.1rem;margin-bottom:36px;">
+          Junte-se a milhares de magos e comece sua jornada hoje.
+        </p>
+        <a href="pages/registro.html" class="btn btn-purple btn-lg">
+          ✨ Criar Conta Grátis
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div style="font-size:2rem;margin-bottom:8px;">🧙‍♂️</div>
+      <div style="font-family:var(--font-display);font-size:1.2rem;color:var(--gold);margin-bottom:8px;">MAGOS</div>
+      <p>Plataforma de Charadas Mágicas &copy; 2026</p>
+    </div>
+  </footer>
+
+  <!-- SCRIPTS -->
+  <script src="assets/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Redirect if already logged in
+      if (MagosApp.isLoggedIn()) {
+        const el = document.querySelector('.nav-inner .flex');
+        if (el) {
+          el.innerHTML = `<a href="pages/painel.html" class="btn btn-gold btn-sm">🧙‍♂️ Meu Painel</a>`;
+        }
+      }
+
+      // Busca deadline do servidor e inicia countdown
+      const cdEl = document.getElementById('countdown-home');
+      const prizeEl = document.getElementById('prize-amount');
+      if (cdEl) {
+        try {
+          const res = await MagosApp.apiCall('getSettings');
+          if (res.success && res.data) {
+            const { monthlyDeadline, monthlyPrizePool } = res.data;
+            if (monthlyDeadline) MagosApp.countdown(monthlyDeadline, cdEl);
+            if (prizeEl && monthlyPrizePool) {
+              prizeEl.textContent = `R$ ${parseFloat(monthlyPrizePool).toFixed(2).replace('.', ',')}`;
+            }
+          }
+        } catch(e) { /* servidor indisponível, mostra placeholder */ }
+      }
+
+      // Smooth nav anchors
+      document.querySelectorAll('a[href^="#"]').forEach(a => {
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          const target = document.querySelector(a.getAttribute('href'));
+          if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+    });
+  </script>
+</body>
+</html>

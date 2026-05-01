@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Criar Charada — MAGOS</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <style>
+    .main-wrap { padding-top: 100px; min-height: 100vh; padding-bottom: 80px; }
+    .creator-grid { display: grid; grid-template-columns: 1fr 380px; gap: 28px; }
+    .preview-card { position: sticky; top: 100px; height: fit-content; }
+
+    .difficulty-selector { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .diff-btn {
+      padding: 10px;
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--border-glass);
+      background: var(--bg-glass);
+      cursor: pointer;
+      text-align: center;
+      transition: var(--transition-fast);
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+    }
+    .diff-btn:hover { border-color: var(--purple-bright); }
+    .diff-btn.selected { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); font-weight: 700; }
+    .diff-btn .diff-stars { font-size: 0.7rem; display: block; margin-bottom: 2px; }
+
+    .category-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .cat-btn {
+      padding: 12px;
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--border-glass);
+      background: var(--bg-glass);
+      cursor: pointer;
+      text-align: center;
+      transition: var(--transition-fast);
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+    .cat-btn:hover { border-color: var(--purple-bright); }
+    .cat-btn.selected { border-color: var(--purple-bright); background: rgba(179,71,255,0.1); color: var(--purple-light); }
+
+    .char-count { font-size: 0.75rem; color: var(--text-muted); text-align: right; margin-top: 4px; }
+    .char-count.over { color: #f87171; }
+
+    .preview-riddle-q {
+      font-size: 0.95rem;
+      font-style: italic;
+      line-height: 1.7;
+      color: var(--text-secondary);
+      position: relative;
+      padding: 0 14px;
+      min-height: 60px;
+    }
+    .preview-riddle-q::before {
+      content: '"';
+      font-family: var(--font-display);
+      font-size: 2.5rem;
+      color: var(--purple-mid);
+      opacity: 0.4;
+      position: absolute;
+      top: -10px;
+      left: -2px;
+    }
+
+    @media (max-width:900px) {
+      .creator-grid { grid-template-columns: 1fr; }
+      .preview-card { position: relative; top: auto; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles-canvas"></canvas>
+
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="../" class="nav-logo"><span>🧙‍♂️</span> MAGOS</a>
+      <div class="nav-links">
+        <a href="painel.html" class="nav-link">Painel</a>
+        <a href="explorar.html" class="nav-link">Explorar</a>
+        <a href="ranking.html" class="nav-link">Ranking</a>
+      </div>
+      <div class="nav-user-info">
+        <div class="user-avatar" id="nav-avatar" onclick="MagosApp.logout()" title="Sair">🧙‍♂️</div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-wrap">
+    <div class="container">
+      <!-- Header -->
+      <div class="flex-between mb-24">
+        <div>
+          <h1 style="font-size:1.8rem;color:var(--gold);">🪄 Criar Charada</h1>
+          <p style="color:var(--text-muted);font-size:0.9rem;">Crie um enigma mágico e compartilhe com o mundo</p>
+        </div>
+        <a href="painel.html" class="btn btn-ghost btn-sm">← Voltar</a>
+      </div>
+
+      <div id="alert-area"></div>
+
+      <div class="creator-grid">
+        <!-- FORM -->
+        <div>
+          <div class="card">
+            <form id="create-form" novalidate>
+              <!-- Question -->
+              <div class="form-group">
+                <label class="form-label" for="question">A Charada ✨</label>
+                <textarea class="form-control" id="question" rows="5"
+                  placeholder="Ex: Tenho cidades, mas nelas não moram pessoas. Tenho montanhas, mas nelas não crescem árvores…"
+                  maxlength="500" oninput="updatePreview()" required></textarea>
+                <div class="char-count"><span id="q-count">0</span>/500</div>
+              </div>
+
+              <!-- Answer -->
+              <div class="form-group">
+                <label class="form-label" for="answer">Resposta 🎯</label>
+                <div class="input-wrapper">
+                  <span class="input-icon">🔓</span>
+                  <input type="text" class="form-control" id="answer"
+                    placeholder="A resposta correta (não será exibida aos jogadores)"
+                    maxlength="100" oninput="updatePreview()" required>
+                </div>
+                <div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px;">💡 A resposta não diferencia maiúsculas e minúsculas</div>
+              </div>
+
+              <!-- Hint -->
+              <div class="form-group">
+                <label class="form-label" for="hint">Dica (opcional) 🗝️</label>
+                <div class="input-wrapper">
+                  <span class="input-icon">💡</span>
+                  <input type="text" class="form-control" id="hint"
+                    placeholder="Uma dica para ajudar os jogadores…"
+                    maxlength="150">
+                </div>
+              </div>
+
+              <!-- Difficulty -->
+              <div class="form-group">
+                <label class="form-label">Dificuldade</label>
+                <div class="difficulty-selector">
+                  <div class="diff-btn selected" id="diff-1" onclick="selectDiff(1)">
+                    <span class="diff-stars">⭐</span>Fácil
+                  </div>
+                  <div class="diff-btn" id="diff-2" onclick="selectDiff(2)">
+                    <span class="diff-stars">⭐⭐</span>Médio
+                  </div>
+                  <div class="diff-btn" id="diff-3" onclick="selectDiff(3)">
+                    <span class="diff-stars">⭐⭐⭐</span>Difícil
+                  </div>
+                  <div class="diff-btn" id="diff-4" onclick="selectDiff(4)">
+                    <span class="diff-stars">⭐⭐⭐⭐</span>Expert
+                  </div>
+                  <div class="diff-btn" id="diff-5" onclick="selectDiff(5)">
+                    <span class="diff-stars">⭐⭐⭐⭐⭐</span>Lendário
+                  </div>
+                </div>
+                <input type="hidden" id="difficulty" value="1">
+              </div>
+
+              <!-- Category -->
+              <div class="form-group">
+                <label class="form-label">Categoria</label>
+                <div class="category-grid">
+                  <div class="cat-btn selected" id="cat-classica" onclick="selectCat('classica')">📜 Clássica</div>
+                  <div class="cat-btn" id="cat-criativa" onclick="selectCat('criativa')">🎨 Criativa</div>
+                  <div class="cat-btn" id="cat-logica" onclick="selectCat('logica')">🧮 Lógica</div>
+                  <div class="cat-btn" id="cat-cultural" onclick="selectCat('cultural')">🌍 Cultural</div>
+                  <div class="cat-btn" id="cat-humor" onclick="selectCat('humor')">😄 Humor</div>
+                  <div class="cat-btn" id="cat-geral" onclick="selectCat('geral')">🎲 Geral</div>
+                </div>
+                <input type="hidden" id="category" value="classica">
+              </div>
+
+              <!-- Tags -->
+              <div class="form-group">
+                <label class="form-label" for="tags">Tags (opcional)</label>
+                <div class="input-wrapper">
+                  <span class="input-icon">🏷️</span>
+                  <input type="text" class="form-control" id="tags"
+                    placeholder="Ex: natureza, animais, brasil (separadas por vírgula)">
+                </div>
+              </div>
+
+              <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px;">
+                <a href="painel.html" class="btn btn-ghost">Cancelar</a>
+                <button type="submit" class="btn btn-gold btn-lg">
+                  <span id="btn-text">✨ Publicar Charada</span>
+                  <span id="btn-loader" style="display:none;">⏳</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- PREVIEW -->
+        <div class="preview-card">
+          <div class="card" style="margin-bottom:16px;">
+            <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">👁 Pré-visualização</div>
+            <div class="riddle-card">
+              <div class="difficulty-bar" id="prev-diff-bar" style="width:20%;background:var(--purple-mid);"></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-top:8px;">
+                <span class="badge badge-purple" id="prev-diff-badge">⭐ Fácil</span>
+                <span class="badge badge-gold" id="prev-points">+50 pts</span>
+              </div>
+              <div class="preview-riddle-q" id="prev-question">Sua charada aparecerá aqui…</div>
+              <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--border-glass);font-size:0.82rem;color:var(--text-muted);">
+                <span id="prev-hint">💡 Nenhuma dica</span>
+              </div>
+              <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+                <span class="badge badge-purple" id="prev-cat">📜 Clássica</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding:20px;">
+            <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">📊 Pontuação por Dificuldade</div>
+            <div style="display:flex;flex-direction:column;gap:6px;font-size:0.85rem;">
+              <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-secondary);">⭐ Fácil</span><span style="color:var(--gold);font-weight:700;">50 pts</span></div>
+              <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-secondary);">⭐⭐ Médio</span><span style="color:var(--gold);font-weight:700;">100 pts</span></div>
+              <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-secondary);">⭐⭐⭐ Difícil</span><span style="color:var(--gold);font-weight:700;">150 pts</span></div>
+              <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-secondary);">⭐⭐⭐⭐ Expert</span><span style="color:var(--gold);font-weight:700;">200 pts</span></div>
+              <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-secondary);">⭐⭐⭐⭐⭐ Lendário</span><span style="color:var(--gold);font-weight:700;">300 pts</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+  <script>
+    const DIFF_POINTS = [0, 50, 100, 150, 200, 300];
+    const DIFF_LABELS = ['', '⭐ Fácil', '⭐⭐ Médio', '⭐⭐⭐ Difícil', '⭐⭐⭐⭐ Expert', '⭐⭐⭐⭐⭐ Lendário'];
+    const CAT_LABELS = { classica: '📜 Clássica', criativa: '🎨 Criativa', logica: '🧮 Lógica', cultural: '🌍 Cultural', humor: '😄 Humor', geral: '🎲 Geral' };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!MagosApp.requireLogin()) return;
+      const u = MagosApp.currentUser;
+      document.getElementById('nav-avatar').textContent = u.avatar;
+      updatePreview();
+
+      document.getElementById('create-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const q = document.getElementById('question').value.trim();
+        const a = document.getElementById('answer').value.trim();
+        if (!q) { showAlert('Digite a charada.'); return; }
+        if (!a) { showAlert('Digite a resposta.'); return; }
+
+        const btn = document.getElementById('btn-text');
+        btn.style.display = 'none';
+        document.getElementById('btn-loader').style.display = 'inline';
+
+        await new Promise(r => setTimeout(r, 600));
+
+        const result = await MagosApp.createRiddle({
+          question: q,
+          answer: a,
+          hint: document.getElementById('hint').value.trim(),
+          difficulty: document.getElementById('difficulty').value,
+          category: document.getElementById('category').value,
+          tags: document.getElementById('tags').value
+        });
+
+        btn.style.display = 'inline';
+        document.getElementById('btn-loader').style.display = 'none';
+
+        if (result.success) {
+          MagosApp.toast('🎉 Charada publicada com sucesso! +30 XP', 'magic');
+          setTimeout(() => window.location.href = `charada.html?id=${result.riddleId}&new=1`, 1200);
+        } else {
+          showAlert(result.error || 'Erro ao publicar charada.');
+        }
+      });
+    });
+
+    function showAlert(msg) {
+      document.getElementById('alert-area').innerHTML = `<div class="alert alert-error">❌ ${msg}</div>`;
+    }
+
+    function updatePreview() {
+      const q = document.getElementById('question').value;
+      const hint = document.getElementById('hint')?.value;
+      const diff = parseInt(document.getElementById('difficulty').value) || 1;
+      const cat = document.getElementById('category').value;
+
+      // Char count
+      const qCount = document.getElementById('q-count');
+      if (qCount) qCount.textContent = q.length;
+
+      document.getElementById('prev-question').textContent = q || 'Sua charada aparecerá aqui…';
+      document.getElementById('prev-hint').textContent = hint ? `💡 ${hint}` : '💡 Nenhuma dica';
+      document.getElementById('prev-diff-badge').textContent = DIFF_LABELS[diff];
+      document.getElementById('prev-points').textContent = `+${DIFF_POINTS[diff]} pts`;
+      document.getElementById('prev-cat').textContent = CAT_LABELS[cat] || '🎲 Geral';
+      const pct = (diff / 5 * 100) + '%';
+      document.getElementById('prev-diff-bar').style.width = pct;
+    }
+
+    function selectDiff(d) {
+      document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+      document.getElementById('diff-' + d).classList.add('selected');
+      document.getElementById('difficulty').value = d;
+      updatePreview();
+    }
+
+    function selectCat(c) {
+      document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+      document.getElementById('cat-' + c).classList.add('selected');
+      document.getElementById('category').value = c;
+      updatePreview();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entrar — MAGOS</title>
+  <meta name="description" content="Faça login na sua conta MAGOS.">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .auth-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 16px;
+    }
+    .auth-card {
+      width: 100%;
+      max-width: 460px;
+      padding: 48px 40px;
+      position: relative;
+      z-index: 1;
+    }
+    .auth-logo {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .auth-logo-icon {
+      font-size: 4rem;
+      display: block;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 0 16px rgba(255,215,0,0.5));
+      animation: float 4s ease-in-out infinite;
+    }
+    .auth-logo h1 {
+      font-size: 2rem;
+      color: var(--gold);
+      letter-spacing: 0.1em;
+    }
+    .auth-logo p { color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; }
+    .demo-hints {
+      background: rgba(179,71,255,0.08);
+      border: 1px solid rgba(179,71,255,0.2);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+    .demo-hints strong { color: var(--purple-light); display: block; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <canvas id="particles-canvas"></canvas>
+  <div class="magic-orb" style="background:var(--purple-bright);top:-10%;left:-10%;width:400px;height:400px;position:fixed;"></div>
+  <div class="magic-orb" style="background:var(--gold);bottom:-5%;right:-5%;width:300px;height:300px;position:fixed;opacity:0.08;"></div>
+
+  <div class="auth-wrap">
+    <div class="card auth-card">
+      <div class="auth-logo">
+        <span class="auth-logo-icon">🧙‍♂️</span>
+        <h1>MAGOS</h1>
+        <p>Entre para continuar sua jornada</p>
+      </div>
+
+      <!-- Alerts -->
+      <div id="alert-area"></div>
+
+      <!-- Login Form -->
+      <form id="login-form" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="email">Email</label>
+          <div class="input-wrapper">
+            <span class="input-icon">📧</span>
+            <input type="email" class="form-control" id="email" placeholder="seu@email.com" autocomplete="email" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Senha</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🔑</span>
+            <input type="password" class="form-control" id="password" placeholder="Sua senha" autocomplete="current-password" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-gold btn-block btn-lg" id="login-btn" style="margin-top:8px;">
+          <span id="btn-text">🪄 Entrar</span>
+          <span id="btn-loader" style="display:none;">⏳</span>
+        </button>
+      </form>
+
+      <div class="divider">ou</div>
+
+      <div class="demo-hints">
+        <strong>🧪 Contas de demonstração</strong>
+        Admin: admin@magos.com / admin123<br>
+        Usuário: ana@demo.com / 123456<br>
+        Empresa: pizza@demo.com / 123456
+      </div>
+
+      <p style="text-align:center;margin-top:24px;font-size:0.9rem;color:var(--text-muted);">
+        Não tem conta? 
+        <a href="registro.html" style="color:var(--gold);text-decoration:none;font-weight:600;">Cadastre-se</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Redirect if already logged in
+      if (MagosApp.isLoggedIn()) window.location.href = 'painel.html';
+
+      const form = document.getElementById('login-form');
+      const alertArea = document.getElementById('alert-area');
+
+      function showAlert(msg, type = 'error') {
+        const icons = { error: '❌', success: '✅', info: 'ℹ️' };
+        alertArea.innerHTML = `<div class="alert alert-${type}">${icons[type]} ${msg}</div>`;
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        alertArea.innerHTML = '';
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const btn = document.getElementById('login-btn');
+        const btnText = document.getElementById('btn-text');
+        const loader = document.getElementById('btn-loader');
+
+        if (!email || !password) { showAlert('Preencha todos os campos.'); return; }
+
+        btn.disabled = true;
+        btnText.style.display = 'none';
+        loader.style.display = 'inline';
+
+        // Simulate async
+        await new Promise(r => setTimeout(r, 600));
+
+        const result = await MagosApp.login(email, password);
+        btn.disabled = false;
+        btnText.style.display = 'inline';
+        loader.style.display = 'none';
+
+        if (result.success) {
+          showAlert('Login realizado! Redirecionando…', 'success');
+          setTimeout(() => window.location.href = 'painel.html', 900);
+        } else {
+          showAlert(result.error);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

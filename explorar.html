@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explorar Charadas — MAGOS</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .main-wrap { padding-top: 80px; min-height: 100vh; }
+    .explore-hero { padding: 60px 0 40px; }
+    .filters-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 32px; }
+    .filter-chip {
+      padding: 8px 18px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-glass);
+      background: var(--bg-glass);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+    .filter-chip:hover { border-color: var(--purple-bright); color: var(--text-primary); }
+    .filter-chip.active { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+
+    .riddle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+
+    .riddle-explore-card {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      transition: var(--transition-mid);
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .riddle-explore-card:hover { transform: translateY(-4px); }
+    .riddle-explore-card:hover .rc-title { color: var(--gold); }
+
+    .rc-diff-stripe {
+      height: 3px;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    }
+
+    .rc-body { padding: 20px; flex: 1; }
+
+    .rc-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+
+    .rc-title {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: var(--text-primary);
+      font-style: italic;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 16px;
+      transition: var(--transition-fast);
+    }
+
+    .rc-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-glass);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .rc-meta { display: flex; gap: 12px; }
+
+    .rc-solved-indicator {
+      position: absolute;
+      top: 12px; right: 12px;
+      font-size: 1.2rem;
+    }
+
+    /* SORT BAR */
+    .sort-bar { display: flex; gap: 8px; }
+    .sort-btn {
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-glass);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+    .sort-btn.active { border-color: var(--purple-bright); color: var(--purple-light); background: rgba(179,71,255,0.1); }
+
+    /* EMPTY STATE */
+    .empty-state { text-align: center; padding: 80px 20px; }
+    .empty-icon { font-size: 4rem; margin-bottom: 16px; }
+
+    @media (max-width: 600px) {
+      .riddle-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles-canvas"></canvas>
+
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo"><span>🧙‍♂️</span> MAGOS</a>
+      <div class="nav-links">
+        <a href="painel.html" class="nav-link" id="nav-painel" style="display:none;">Painel</a>
+        <a href="explorar.html" class="nav-link active">Explorar</a>
+        <a href="ranking.html" class="nav-link">Ranking</a>
+      </div>
+      <div class="flex gap-8">
+        <a href="login.html" class="btn btn-gold btn-sm" id="nav-login">Entrar</a>
+        <a href="painel.html" class="btn btn-gold btn-sm" id="nav-painel2" style="display:none;">Meu Painel</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-wrap">
+    <div class="container">
+      <div class="explore-hero">
+        <h1 style="font-size:clamp(1.8rem,4vw,3rem);margin-bottom:8px;">
+          🔍 Explorar <span class="gradient-text">Charadas</span>
+        </h1>
+        <p style="color:var(--text-secondary);">Escolha um enigma e prove seu valor, mago.</p>
+        <!-- Access scope banner -->
+        <div id="scope-banner" style="display:none;margin-top:20px;"></div>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="flex-between gap-16 mb-16" style="flex-wrap:wrap;">
+        <div class="search-box" style="flex:1;max-width:400px;">
+          <span>🔍</span>
+          <input type="text" id="search-input" placeholder="Buscar charadas…" oninput="filterRiddles()">
+        </div>
+        <div class="sort-bar">
+          <button class="sort-btn active" id="sort-recent" onclick="setSort('recent')">Recentes</button>
+          <button class="sort-btn" id="sort-popular" onclick="setSort('popular')">Populares</button>
+          <button class="sort-btn" id="sort-easy" onclick="setSort('easy')">Mais Fáceis</button>
+          <button class="sort-btn" id="sort-hard" onclick="setSort('hard')">Mais Difíceis</button>
+        </div>
+      </div>
+
+      <!-- Category filters -->
+      <div class="filters-bar" id="filters-bar">
+        <span style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;">Filtrar:</span>
+        <div class="filter-chip active" onclick="setFilter('all', this)">🎲 Todos</div>
+        <div class="filter-chip" onclick="setFilter('classica', this)">📜 Clássica</div>
+        <div class="filter-chip" onclick="setFilter('criativa', this)">🎨 Criativa</div>
+        <div class="filter-chip" onclick="setFilter('logica', this)">🧮 Lógica</div>
+        <div class="filter-chip" onclick="setFilter('cultural', this)">🌍 Cultural</div>
+        <div class="filter-chip" onclick="setFilter('humor', this)">😄 Humor</div>
+        <div class="filter-chip monthly" onclick="setFilter('monthly', this)">🏆 Mensal</div>
+      </div>
+
+      <!-- Results count -->
+      <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:20px;" id="results-count"></div>
+
+      <!-- Grid -->
+      <div class="riddle-grid" id="riddle-grid"></div>
+
+      <!-- Empty state -->
+      <div class="empty-state" id="empty-state" style="display:none;">
+        <div class="empty-icon">🌀</div>
+        <h3 style="color:var(--text-secondary);margin-bottom:8px;">Nenhuma charada encontrada</h3>
+        <p style="color:var(--text-muted);font-size:0.9rem;">Tente outro filtro ou seja o primeiro a criar!</p>
+        <a href="criar.html" class="btn btn-purple" style="margin-top:16px;">➕ Criar Charada</a>
+      </div>
+    </div>
+
+    <div style="padding-bottom:60px;"></div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    let currentFilter = 'all';
+    let currentSort = 'recent';
+
+    const DIFF_COLORS = ['', '#34d399', '#60a5fa', '#fbbf24', '#f87171', '#a78bfa'];
+    const CAT_LABELS = { classica: '📜 Clássica', criativa: '🎨 Criativa', logica: '🧮 Lógica', cultural: '🌍 Cultural', humor: '😄 Humor', geral: '🎲 Geral' };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // --- ACCESS CONTROL ---
+      if (!MagosApp.isLoggedIn()) {
+        // Visitors cannot access this page
+        window.location.href = 'login.html?next=explorar.html';
+        return;
+      }
+
+      // Update navbar
+      document.getElementById('nav-login').style.display = 'none';
+      document.getElementById('nav-painel').style.display = 'inline';
+      document.getElementById('nav-painel2').style.display = 'inline-flex';
+
+      // Show scope banner
+      const isAdmin = MagosApp.currentUser.role === 'admin';
+      const banner = document.getElementById('scope-banner');
+      banner.style.display = 'block';
+      if (isAdmin) {
+        banner.innerHTML = `
+          <div class="alert alert-info" style="display:inline-flex;gap:10px;align-items:center;">
+            <span>🛡️</span>
+            <span><strong>Modo Administrador</strong> — você está vendo <strong>todas</strong> as charadas da plataforma.</span>
+          </div>`;
+      } else {
+        banner.innerHTML = `
+          <div class="alert alert-warning" style="display:inline-flex;gap:10px;align-items:center;">
+            <span>🔒</span>
+            <span>Você está vendo apenas <strong>suas próprias charadas</strong>. Somente o administrador pode explorar todas.</span>
+          </div>`;
+      }
+
+      renderRiddles();
+    });
+
+    async function getRiddles() {
+      // Como a API já traz as charadas prontas (seja todas como admin ou apenas do usuário), 
+      // precisaremos pedir para a nossa nova API trazer.
+      const isAdmin = MagosApp.currentUser && MagosApp.currentUser.role === 'admin';
+
+      let riddles = [];
+      if (isAdmin) {
+        // Admin pega todas
+        riddles = await MagosApp.getPublicRiddles(); 
+      } else {
+        // Usuário normal neste painel (no Magos v1.0 o usuário "explorar" só vê as dele, a menos que mude as regras lá na API)
+        riddles = await MagosApp.getMyRiddles();
+      }
+
+      // Category / monthly filter (feito no frontend para agilizar igual ao original)
+      if (currentFilter === 'monthly') riddles = riddles.filter(r => r.isMonthly);
+      else if (currentFilter !== 'all') riddles = riddles.filter(r => r.category === currentFilter);
+
+      // Search
+      const q = document.getElementById('search-input').value.trim().toLowerCase();
+      if (q) riddles = riddles.filter(r =>
+        r.question.toLowerCase().includes(q) ||
+        (r.tags && r.tags.some(t => t.toLowerCase().includes(q)))
+      );
+
+      // Sort
+      if (currentSort === 'recent') riddles.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      else if (currentSort === 'popular') riddles.sort((a, b) => b.solvedCount - a.solvedCount);
+      else if (currentSort === 'easy') riddles.sort((a, b) => a.difficulty - b.difficulty);
+      else if (currentSort === 'hard') riddles.sort((a, b) => b.difficulty - a.difficulty);
+
+      return riddles;
+    }
+
+    async function renderRiddles() {
+      const riddles = await getRiddles();
+      const grid = document.getElementById('riddle-grid');
+      const empty = document.getElementById('empty-state');
+      const count = document.getElementById('results-count');
+
+      count.textContent = `${riddles.length} charada${riddles.length !== 1 ? 's' : ''} encontrada${riddles.length !== 1 ? 's' : ''}`;
+
+      if (!riddles.length) {
+        grid.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+
+      empty.style.display = 'none';
+
+      // hasAnswered é async — resolvemos todos em paralelo primeiro
+      const solvedFlags = await Promise.all(riddles.map(r => MagosApp.hasAnswered(r.id)));
+
+      grid.innerHTML = riddles.map((r, idx) => {
+        const solved = solvedFlags[idx];
+        const diffColor = DIFF_COLORS[r.difficulty] || '#60a5fa';
+        return `
+          <a href="charada.html?id=${r.id}" class="card riddle-explore-card card-hover" style="text-decoration:none;">
+            <div class="rc-diff-stripe" style="background:${diffColor};"></div>
+            ${solved ? '<div class="rc-solved-indicator">✅</div>' : ''}
+            <div class="rc-body">
+              <div class="rc-tags">
+                <span class="badge badge-purple" style="font-size:0.7rem;">${MagosApp.difficultyLabel(r.difficulty)}</span>
+                <span class="badge" style="background:rgba(${r.isMonthly ? '255,215,0' : '40,20,100'},.15);color:var(--${r.isMonthly ? 'gold' : 'text-secondary'});border:1px solid rgba(${r.isMonthly ? '255,215,0' : '179,71,255'},.25);font-size:0.7rem;">
+                  ${r.isMonthly ? '🏆 Mensal' : (CAT_LABELS[r.category] || '🎲 Geral')}
+                </span>
+              </div>
+              <div class="rc-title">${r.question}</div>
+              <div class="rc-footer">
+                <div class="rc-meta">
+                  <span>👁 ${r.views}</span>
+                  <span>✅ ${r.solvedCount}</span>
+                </div>
+                <span class="badge badge-gold" style="font-size:0.75rem;">+${r.points} pts</span>
+              </div>
+            </div>
+          </a>`;
+      }).join('');
+    }
+
+    function filterRiddles() { renderRiddles(); }
+
+    function setFilter(f, el) {
+      currentFilter = f;
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      renderRiddles();
+    }
+
+    function setSort(s) {
+      currentSort = s;
+      document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('sort-' + s).classList.add('active');
+      renderRiddles();
+    }
+  </script>
+</body>
+</html>

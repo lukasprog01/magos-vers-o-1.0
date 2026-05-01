@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Charada — MAGOS</title>
+  <meta name="description" content="Resolva esta charada mágica na plataforma MAGOS.">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .main-wrap { padding-top: 100px; min-height: 100vh; padding-bottom: 80px; }
+
+    /* RIDDLE HERO */
+    .riddle-hero {
+      text-align: center;
+      padding: 20px 0 40px;
+    }
+
+    .riddle-main-card {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .riddle-big-q {
+      font-size: 1.25rem;
+      line-height: 1.75;
+      color: var(--text-primary);
+      font-style: italic;
+      position: relative;
+      padding: 20px 30px;
+    }
+
+    .riddle-big-q::before {
+      content: '"';
+      font-family: var(--font-display);
+      font-size: 5rem;
+      color: var(--purple-mid);
+      opacity: 0.25;
+      position: absolute;
+      top: -10px; left: -4px;
+      line-height: 1;
+    }
+
+    .riddle-big-q::after {
+      content: '"';
+      font-family: var(--font-display);
+      font-size: 5rem;
+      color: var(--purple-mid);
+      opacity: 0.25;
+      position: absolute;
+      bottom: -30px; right: -4px;
+      line-height: 1;
+    }
+
+    /* ANSWER INPUT AREA */
+    .answer-area {
+      margin-top: 2rem;
+    }
+
+    .answer-input-big {
+      font-size: 1.2rem;
+      text-align: center;
+      letter-spacing: 0.05em;
+      padding: 18px 24px;
+    }
+
+    .shake-wrong {
+      animation: shakeX 0.5s ease;
+    }
+
+    @keyframes shakeX {
+      0%,100%{transform:translateX(0)}
+      10%,50%,90%{transform:translateX(-8px)}
+      30%,70%{transform:translateX(8px)}
+    }
+
+    /* RESULT */
+    .result-box {
+      text-align: center;
+      padding: 40px 24px;
+    }
+
+    .result-icon { font-size: 5rem; margin-bottom: 16px; filter: drop-shadow(0 0 16px currentColor); }
+    .result-xp {
+      font-family: var(--font-mono);
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    /* QR / SHARE SECTION */
+    .share-section { margin-top: 28px; }
+
+    /* ATTEMPTS */
+    .attempts-counter {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .attempt-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--border-glass);
+      transition: var(--transition-fast);
+    }
+
+    .attempt-dot.wrong { background: #f87171; }
+    .hint-reveal { cursor: pointer; transition: var(--transition-fast); }
+    .hint-reveal:hover { color: var(--gold); }
+
+    .author-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      background: var(--bg-glass);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-glass);
+      margin-bottom: 20px;
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles-canvas"></canvas>
+
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo"><span>🧙‍♂️</span> MAGOS</a>
+      <div class="nav-links">
+        <a href="explorar.html" class="nav-link">Explorar</a>
+        <a href="ranking.html" class="nav-link">Ranking</a>
+      </div>
+      <div class="flex gap-8">
+        <a href="painel.html" class="btn btn-ghost btn-sm" id="nav-painel" style="display:none;">Meu Painel</a>
+        <a href="login.html" class="btn btn-gold btn-sm" id="nav-login">Entrar</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-wrap">
+    <div class="container">
+      <!-- Loading state -->
+      <div id="loading-state" style="text-align:center;padding:80px;">
+        <div class="spinner" style="margin:0 auto 16px;"></div>
+        <div style="color:var(--text-muted);">Conjurando o enigma…</div>
+      </div>
+
+      <!-- Not found -->
+      <div id="not-found" style="display:none;text-align:center;padding:80px;">
+        <div style="font-size:3rem;margin-bottom:16px;">🌀</div>
+        <h2 style="color:var(--text-secondary);margin-bottom:12px;">Charada não encontrada</h2>
+        <a href="explorar.html" class="btn btn-purple">Explorar Charadas</a>
+      </div>
+
+      <!-- Riddle content -->
+      <div id="riddle-content" style="display:none;">
+        <div class="riddle-main-card">
+
+          <!-- Author bar -->
+          <div class="author-bar" id="author-bar">
+            <span style="font-size:1.4rem;">🧙‍♂️</span>
+            <div>
+              <div id="author-name" style="font-weight:600;color:var(--text-primary);">—</div>
+              <div style="color:var(--text-muted);font-size:0.78rem;" id="riddle-date">—</div>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:8px;" id="riddle-badges"></div>
+          </div>
+
+          <!-- Main riddle card -->
+          <div class="card riddle-card" id="riddle-card" style="margin-bottom:20px;">
+            <div class="difficulty-bar" id="diff-bar" style="width:40%;"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-top:8px;">
+              <span class="badge badge-purple" id="badge-diff">—</span>
+              <span class="badge badge-gold" id="badge-pts">—</span>
+            </div>
+            
+            <div class="riddle-big-q" id="riddle-question">—</div>
+
+            <!-- ANSWER AREA -->
+            <div class="answer-area" id="answer-area">
+              <div id="logged-answer-group" style="display:none;">
+                <div style="margin-bottom:12px;text-align:center;color:var(--text-muted);font-size:0.85rem;">
+                  💭 Qual é a resposta?
+                </div>
+                <input type="text" class="form-control answer-input-big" id="answer-input"
+                  placeholder="Digite sua resposta…"
+                  autocomplete="off" autocorrect="off" spellcheck="false">
+                <div class="attempts-counter" id="attempts-counter"></div>
+
+                <div style="text-align:center;margin-top:16px;">
+                  <div class="hint-reveal" id="hint-toggle" onclick="toggleHint()" style="display:none;font-size:0.85rem;color:var(--text-muted);">
+                    💡 Revelar dica
+                  </div>
+                  <div id="hint-text" style="display:none;font-size:0.88rem;color:var(--gold);margin-top:8px;padding:10px;background:var(--gold-dim);border-radius:var(--radius-md);"></div>
+                </div>
+
+                <div style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap;">
+                  <button class="btn btn-gold btn-lg" id="submit-btn" onclick="submitAnswer()">
+                    🗝️ Responder
+                  </button>
+                </div>
+              </div>
+
+              <!-- GUEST AREA -->
+              <div id="guest-answer-group" style="display:none;text-align:center;padding:20px;">
+                <p style="color:var(--text-secondary);margin-bottom:20px;">
+                  🧙‍♂️ Você precisa ser um mago registrado para responder a este enigma e ganhar pontos!
+                </p>
+                <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+                  <a href="login.html?next=charada.html?id=${riddle.id}" class="btn btn-gold">✨ Fazer Login</a>
+                  <a href="registro.html" class="btn btn-ghost">📝 Criar Conta Grátis</a>
+                </div>
+              </div>
+            </div>
+
+            <!-- RESULT (hidden initially) -->
+            <div class="result-box" id="result-box" style="display:none;">
+              <div class="result-icon" id="result-icon">✅</div>
+              <h2 id="result-title" style="margin-bottom:8px;">Resposta Correta!</h2>
+              <p id="result-msg" style="color:var(--text-secondary);margin-bottom:16px;"></p>
+              <div class="result-xp" id="result-xp" style="display:none;"></div>
+            </div>
+          </div>
+
+          <!-- Stats row -->
+          <div class="grid-3" style="gap:12px;margin-bottom:20px;">
+            <div class="card" style="padding:16px;text-align:center;">
+              <div style="font-size:1.5rem;">👁</div>
+              <div style="font-family:var(--font-mono);color:var(--text-primary);font-weight:700;" id="stat-views">0</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);">Visualizações</div>
+            </div>
+            <div class="card" style="padding:16px;text-align:center;">
+              <div style="font-size:1.5rem;">✅</div>
+              <div style="font-family:var(--font-mono);color:var(--gold);font-weight:700;" id="stat-solved-count">0</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);">Resolvidas</div>
+            </div>
+            <div class="card" style="padding:16px;text-align:center;">
+              <div style="font-size:1.5rem;">💰</div>
+              <div style="font-family:var(--font-mono);color:var(--purple-light);font-weight:700;" id="stat-points">0</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);">Pontos</div>
+            </div>
+          </div>
+
+          <!-- Share / Print section -->
+          <div class="card share-section">
+            <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:14px;">🔗 Compartilhar</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn btn-ghost btn-sm" id="btn-whatsapp" onclick="shareWhatsApp()">💬 WhatsApp</button>
+              <button class="btn btn-ghost btn-sm" id="btn-copy" onclick="copyLink()">📋 Copiar Link</button>
+              <button class="btn btn-ghost btn-sm" id="btn-qr" onclick="showQR()">📱 Ver QR Code</button>
+              <button class="btn btn-ghost btn-sm" id="btn-print" onclick="printPage()">🖨️ Imprimir</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR MODAL -->
+  <div class="modal-overlay" id="qr-modal">
+    <div class="modal" style="max-width:380px;text-align:center;">
+      <button class="modal-close" onclick="closeQRModal()">✕</button>
+      <h3 style="font-family:var(--font-display);color:var(--gold);margin-bottom:20px;">QR Code</h3>
+      <div class="qr-frame" id="qr-frame" style="display:inline-block;margin:0 auto 20px;">
+        <div style="width:200px;height:200px;display:flex;align-items:center;justify-content:center;"><div class="spinner"></div></div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="downloadQR()">⬇️ Baixar</button>
+        <button class="btn btn-ghost btn-sm" onclick="printPage()">🖨️ Imprimir</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/qrcode.min.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    let riddle = null;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 3;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Update nav
+      if (MagosApp.isLoggedIn()) {
+        document.getElementById('nav-login').style.display = 'none';
+        document.getElementById('nav-painel').style.display = 'inline-flex';
+      }
+
+      // Get riddle ID from URL
+      const params = new URLSearchParams(location.search);
+      const id = params.get('id');
+      if (!id) { showNotFound(); return; }
+
+      const response = await MagosApp.getRiddle(id);
+      riddle = response.success ? response.data : null;
+      
+      if (!riddle) { showNotFound(); return; }
+
+      // Incrementa views no servidor
+      MagosApp.apiCall(`updateViews&id=${riddle.id}`);
+
+      await renderRiddle();
+
+      // If new riddle, show success toast
+      if (params.get('new') === '1') {
+        setTimeout(() => MagosApp.toast('🎉 Charada criada! QR Code disponível abaixo.', 'magic'), 500);
+      }
+
+      // Enter key to submit
+      document.getElementById('answer-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') submitAnswer();
+      });
+    });
+
+    function showNotFound() {
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('not-found').style.display = 'block';
+    }
+
+    async function renderRiddle() {
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('riddle-content').style.display = 'block';
+
+      // Author
+      document.getElementById('author-name').textContent = riddle.authorName || 'Mago Anônimo';
+      document.getElementById('riddle-date').textContent = MagosApp.formatDate(riddle.createdAt);
+
+      // Badges
+      const badgeArea = document.getElementById('riddle-badges');
+      badgeArea.innerHTML = '';
+      if (riddle.isMonthly) badgeArea.innerHTML += `<span class="badge badge-gold">🏆 Mensal</span>`;
+      badgeArea.innerHTML += `<span class="badge badge-purple">${MagosApp.difficultyLabel(riddle.difficulty)}</span>`;
+
+      // Riddle content
+      document.getElementById('diff-bar').style.width = (riddle.difficulty / 5 * 100) + '%';
+      document.getElementById('diff-bar').style.background = MagosApp.difficultyColor(riddle.difficulty);
+      document.getElementById('badge-diff').textContent = MagosApp.difficultyLabel(riddle.difficulty);
+      document.getElementById('badge-pts').textContent = `+${riddle.points} pts`;
+      document.getElementById('riddle-question').textContent = riddle.question;
+
+      // Stats
+      document.getElementById('stat-views').textContent = riddle.views;
+      document.getElementById('stat-solved-count').textContent = riddle.solvedCount;
+      document.getElementById('stat-points').textContent = riddle.points;
+
+      // Hint
+      if (riddle.hint) document.getElementById('hint-toggle').style.display = 'block';
+
+      // Attempts
+      renderAttempts();
+
+      // Check already answered
+      const alreadyAnswered = await MagosApp.hasAnswered(riddle.id);
+      
+      if (alreadyAnswered) {
+        showAlreadyAnswered();
+      } else {
+        // Show correct area based on login
+        if (MagosApp.isLoggedIn()) {
+          document.getElementById('logged-answer-group').style.display = 'block';
+        } else {
+          document.getElementById('guest-answer-group').style.display = 'block';
+          // Update login link with dynamic URL
+          const loginLink = document.querySelector('#guest-answer-group a[href^="login.html"]');
+          if (loginLink) loginLink.href = `login.html?next=charada.html?id=${riddle.id}`;
+        }
+      }
+
+      // Page title
+      document.title = `Charada — MAGOS`;
+
+      // Generate QR background
+      generateQRCode();
+    }
+
+    function renderAttempts() {
+      const counter = document.getElementById('attempts-counter');
+      counter.innerHTML = '';
+      for (let i = 0; i < MAX_ATTEMPTS; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'attempt-dot' + (i < attempts ? ' wrong' : '');
+        counter.appendChild(dot);
+      }
+    }
+
+    function showAlreadyAnswered() {
+      document.getElementById('answer-area').style.display = 'none';
+      const result = document.getElementById('result-box');
+      result.style.display = 'block';
+      document.getElementById('result-icon').textContent = '🏆';
+      document.getElementById('result-title').textContent = 'Já respondido!';
+      document.getElementById('result-msg').textContent = 'Você já acertou esta charada. Continue explorando!';
+    }
+
+    function toggleHint() {
+      const hintEl = document.getElementById('hint-text');
+      if (hintEl.style.display === 'none') {
+        hintEl.style.display = 'block';
+        hintEl.textContent = riddle.hint;
+        document.getElementById('hint-toggle').textContent = '💡 Esconder dica';
+      } else {
+        hintEl.style.display = 'none';
+        document.getElementById('hint-toggle').textContent = '💡 Revelar dica';
+      }
+    }
+
+    async function submitAnswer() {
+      if (!MagosApp.isLoggedIn()) {
+        MagosApp.toast('Faça login para responder!', 'warning');
+        setTimeout(() => window.location.href = 'login.html', 1500);
+        return;
+      }
+
+      const input = document.getElementById('answer-input');
+      const answer = input.value.trim();
+      if (!answer) { input.focus(); return; }
+
+      const result = await MagosApp.answerRiddle(riddle.id, answer);
+
+      if (result.alreadyDone) {
+        showAlreadyAnswered();
+        return;
+      }
+
+      if (result.correct) {
+        // SUCCESS!
+        document.getElementById('answer-area').style.display = 'none';
+        const resultBox = document.getElementById('result-box');
+        resultBox.style.display = 'block';
+        document.getElementById('result-icon').textContent = '🎉';
+        document.getElementById('result-title').textContent = 'Resposta Correta!';
+        document.getElementById('result-msg').textContent = `Incrível! Você acertou em ${attempts + 1} tentativa${attempts > 0 ? 's' : ''}. Continue assim!`;
+        const xpEl = document.getElementById('result-xp');
+        xpEl.style.display = 'block';
+        xpEl.textContent = `+${riddle.points} pts ganhos!`;
+
+        // Update stats display
+        document.getElementById('stat-solved-count').textContent = riddle.solvedCount;
+
+        MagosApp.toast(`🎉 Correto! +${riddle.points} XP ganhos!`, 'magic');
+
+        // Confetti-like animation
+        confettiEffect();
+      } else {
+        attempts++;
+        input.classList.add('shake-wrong');
+        setTimeout(() => input.classList.remove('shake-wrong'), 500);
+        input.value = '';
+        renderAttempts();
+
+        if (attempts >= MAX_ATTEMPTS) {
+          // Out of attempts - reveal answer
+          document.getElementById('answer-area').style.display = 'none';
+          const resultBox = document.getElementById('result-box');
+          resultBox.style.display = 'block';
+          document.getElementById('result-icon').textContent = '😔';
+          document.getElementById('result-title').textContent = 'Sem tentativas!';
+          document.getElementById('result-msg').textContent = `A resposta era: "${riddle.answer}". Não desanime!`;
+          MagosApp.toast('❌ Você usou todas as tentativas.', 'error');
+        } else {
+          MagosApp.toast(`❌ Errado! ${MAX_ATTEMPTS - attempts} tentativa${MAX_ATTEMPTS - attempts !== 1 ? 's' : ''} restante${MAX_ATTEMPTS - attempts !== 1 ? 's' : ''}.`, 'error');
+          if (!riddle.hint) {} else if (attempts === 1) {
+            document.getElementById('hint-toggle').style.display = 'block';
+          }
+          input.focus();
+        }
+      }
+    }
+
+    async function generateQRCode() {
+      const url = MagosApp.getRiddleURL(riddle.id);
+      const frame = document.getElementById('qr-frame');
+      try {
+        const qrObj = window.QRCode || window.qrcode;
+        if (!qrObj) {
+          console.warn('QR Library not loaded, using fallback API');
+          frame.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}" style="border-radius:8px;box-shadow:0 0 20px rgba(0,0,0,0.5);">`;
+          return;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.id = 'qr-canvas';
+        await qrObj.toCanvas(canvas, url, { width: 200, margin: 2, color: { dark: '#1a0533', light: '#ffffff' } });
+        frame.innerHTML = '';
+        frame.appendChild(canvas);
+      } catch(e) {
+        console.error('QR generation error:', e);
+        frame.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}" style="border-radius:8px;box-shadow:0 0 20px rgba(0,0,0,0.5);">`;
+      }
+    }
+
+    function showQR() { document.getElementById('qr-modal').classList.add('open'); }
+    function closeQRModal() { document.getElementById('qr-modal').classList.remove('open'); }
+
+    function downloadQR() {
+      const canvas = document.getElementById('qr-canvas');
+      if (!canvas) return;
+      const a = document.createElement('a');
+      a.download = `magos-${riddle.id}.png`;
+      a.href = canvas.toDataURL();
+      a.click();
+    }
+
+    function shareWhatsApp() { MagosApp.shareOnWhatsApp(riddle.id); }
+
+    function copyLink() {
+      const url = MagosApp.getRiddleURL(riddle.id);
+      navigator.clipboard.writeText(url).then(() => MagosApp.toast('✅ Link copiado!', 'success')).catch(() => {
+        prompt('Copie o link:', url);
+      });
+    }
+
+    function printPage() {
+      window.open(`imprimir.html?id=${riddle.id}`, '_blank');
+    }
+
+    function confettiEffect() {
+      // Simple star particle burst effect
+      const colors = ['#ffd700', '#b347ff', '#00e5ff', '#ff6b9d'];
+      for (let i = 0; i < 20; i++) {
+        setTimeout(() => {
+          const el = document.createElement('div');
+          el.textContent = ['✨', '⭐', '🌟', '💫'][Math.floor(Math.random() * 4)];
+          el.style.cssText = `position:fixed;font-size:${1.5 + Math.random()}rem;left:${20 + Math.random() * 60}%;top:${20 + Math.random() * 40}%;z-index:9999;pointer-events:none;animation:fadeUp 1.2s ease forwards;`;
+          document.body.appendChild(el);
+          setTimeout(() => el.remove(), 1200);
+        }, i * 50);
+      }
+    }
+
+    window.addEventListener('click', (e) => {
+      if (e.target.id === 'qr-modal') closeQRModal();
+    });
+  </script>
+</body>
+</html>

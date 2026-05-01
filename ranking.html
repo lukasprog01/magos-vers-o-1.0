@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ranking — MAGOS</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .main-wrap { padding-top: 100px; min-height: 100vh; padding-bottom: 80px; }
+
+    .podium-wrap {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 16px;
+      margin: 40px 0 60px;
+    }
+
+    .podium-place {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .podium-avatar {
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+      border: 3px solid;
+      box-shadow: 0 0 20px;
+    }
+
+    .podium-column {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      font-family: var(--font-mono);
+      font-size: 1.5rem;
+      font-weight: 900;
+    }
+
+    .place-1 .podium-avatar { width:72px;height:72px; border-color:#ffd700; box-shadow:0 0 20px rgba(255,215,0,0.4); }
+    .place-2 .podium-avatar { width:60px;height:60px; border-color:#c0c0c0; box-shadow:0 0 16px rgba(192,192,192,0.3); }
+    .place-3 .podium-avatar { width:56px;height:56px; border-color:#cd7f32; box-shadow:0 0 16px rgba(205,127,50,0.3); }
+
+    .place-1 .podium-column { height:120px; width:120px; background:linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,215,0,0.05)); border:1px solid rgba(255,215,0,0.3); color:#ffd700; }
+    .place-2 .podium-column { height:90px; width:100px; background:linear-gradient(135deg,rgba(192,192,192,0.1),rgba(192,192,192,0.03)); border:1px solid rgba(192,192,192,0.2); color:#c0c0c0; }
+    .place-3 .podium-column { height:70px; width:100px; background:linear-gradient(135deg,rgba(205,127,50,0.1),rgba(205,127,50,0.03)); border:1px solid rgba(205,127,50,0.2); color:#cd7f32; }
+
+    .podium-name { font-size:0.85rem; font-weight:600; text-align:center; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .podium-score { font-family:var(--font-mono); font-size:0.8rem; color:var(--text-muted); }
+    .podium-badge { font-size:1.3rem; }
+
+    .lb-section { max-width: 700px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <canvas id="particles-canvas"></canvas>
+
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo"><span>🧙‍♂️</span> MAGOS</a>
+      <div class="nav-links">
+        <a href="painel.html" class="nav-link" id="nav-painel">Painel</a>
+        <a href="explorar.html" class="nav-link">Explorar</a>
+        <a href="ranking.html" class="nav-link active">Ranking</a>
+      </div>
+      <div class="flex gap-8">
+        <a href="login.html" class="btn btn-gold btn-sm" id="nav-login">Entrar</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-wrap">
+    <div class="container">
+      <!-- Header -->
+      <div style="text-align:center;margin-bottom:8px;">
+        <h1 style="font-size:clamp(2rem,5vw,3.5rem);">🏆 Ranking dos <span class="gradient-text">Magos</span></h1>
+        <p style="color:var(--text-secondary);margin-top:8px;">Os maiores decifradores de enigmas do Brasil</p>
+      </div>
+
+      <!-- PODIUM -->
+      <div class="podium-wrap" id="podium">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- LIST -->
+      <div class="lb-section">
+        <div class="flex-between mb-16">
+          <h2 style="font-size:1.1rem;color:var(--text-muted);">📋 Classificação Geral</h2>
+          <div class="badge badge-purple" id="my-rank-badge" style="display:none;">Sua posição: #—</div>
+        </div>
+        <div id="lb-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (MagosApp.isLoggedIn()) {
+        document.getElementById('nav-login').style.display = 'none';
+      }
+      renderLeaderboard();
+    });
+
+    function scoreOf(u) { return u.level * 10000 + u.xp; }
+
+    async function renderLeaderboard() {
+      const lb = await MagosApp.getLeaderboard();
+      const me = MagosApp.currentUser;
+
+      // My rank badge
+      if (me) {
+        const myRank = lb.findIndex(u => u.id === me.id) + 1;
+        const badge = document.getElementById('my-rank-badge');
+        badge.style.display = 'inline-flex';
+        badge.textContent = `Você: #${myRank}`;
+      }
+
+      // PODIUM (top 3)
+      const podium = document.getElementById('podium');
+      const top3 = lb.slice(0, 3);
+      const medals = ['🥇', '🥈', '🥉'];
+      const positions = [1, 0, 2]; // display order: 2nd, 1st, 3rd
+
+      const podiumItems = [
+        top3[1] ? renderPodiumPlace(top3[1], 2, medals[1]) : '',
+        top3[0] ? renderPodiumPlace(top3[0], 1, medals[0]) : '',
+        top3[2] ? renderPodiumPlace(top3[2], 3, medals[2]) : ''
+      ];
+
+      podium.innerHTML = podiumItems.join('');
+
+      // FULL LIST (from 4 onwards)
+      const list = document.getElementById('lb-list');
+      if (!lb.length) { list.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;">Nenhum jogador ainda.</div>'; return; }
+
+      list.innerHTML = lb.map((u, i) => {
+        const isMe = me && u.id === me.id;
+        const rank = i + 1;
+        const rankClass = rank === 1 ? 'top-1' : rank === 2 ? 'top-2' : rank === 3 ? 'top-3' : '';
+
+        return `<div class="lb-row ${rankClass}" style="${isMe ? 'border-color:var(--purple-bright);background:rgba(124,58,237,0.1);' : ''}">
+          <div class="lb-rank" style="color:${rank <= 3 ? ['#ffd700','#c0c0c0','#cd7f32'][rank-1] : 'var(--text-muted)'}">
+            ${rank <= 3 ? ['🥇','🥈','🥉'][rank-1] : '#' + rank}
+          </div>
+          <div class="lb-avatar">${u.avatar}</div>
+          <div class="lb-info">
+            <div class="lb-name">${u.name} ${isMe ? '<span class="badge badge-purple" style="font-size:0.65rem;">Você</span>' : ''}</div>
+            <div class="lb-sub">${MagosApp.getLevelEmoji(u.level)} Nv.${u.level} ${MagosApp.getLevelTitle(u.level)} · ✅ ${u.charadasSolved} resolvidas</div>
+          </div>
+          <div class="lb-score">${scoreOf(u).toLocaleString('pt-BR')}</div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderPodiumPlace(u, pos, medal) {
+      const heights = { 1: 120, 2: 90, 3: 70 };
+      const colors = { 1: '#ffd700', 2: '#c0c0c0', 3: '#cd7f32' };
+      return `<div class="podium-place place-${pos}">
+        <div class="podium-badge">${medal}</div>
+        <div class="podium-avatar" style="width:${pos===1?72:pos===2?60:56}px;height:${pos===1?72:pos===2?60:56}px;border-color:${colors[pos]};box-shadow:0 0 20px ${colors[pos]}55;">
+          ${u.avatar}
+        </div>
+        <div class="podium-name">${u.name}</div>
+        <div class="podium-score">Nv.${u.level}</div>
+        <div class="podium-column" style="height:${heights[pos]}px;">${pos}</div>
+      </div>`;
+    }
+  </script>
+</body>
+</html>
